@@ -1,0 +1,193 @@
+syntax = "proto3";
+
+option csharp_namespace = "WorkspaceServiceGrpc";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+package workspace_service;
+
+service WorkspaceService {
+  rpc Empty (google.protobuf.Empty) returns (google.protobuf.Empty);
+
+  // GET
+  /* Получить воркспейсы юзера */
+  rpc GetUserWorkspaces (GetUserWorkspacesRequest) returns (GetUserWorkspacesResponse);
+  /* Получить воркспейс без юзеров */
+  rpc GetWorkspace (GetWorkspaceRequest) returns (GetWorkspaceResponse);
+	/* Получить юзеров воркспейса */
+	rpc GetWorkspaceWithUsers (GetWorkspaceWithUsersRequest) returns (GetWorkspaceWithUsersResponse);
+	/* Получить все воркспейсы без юзеров */
+	rpc GetAllWorkspaces (google.protobuf.Empty) returns (GetAllWorkspacesResponse);
+	/* Получить состояние пользователя в воркспейсе */
+  rpc GetUserInWorkspace (GetUserInWorkspaceRequest) returns (UserMessage);
+
+  // POST/PUT
+  /* Создать воркспейс */
+  rpc CreateWorkspace (CreateWorkspaceRequest) returns (CreateWorkspaceResponse);
+  /* Обновить состояние юзера в воркспейсе */
+  rpc PutUserToWorkspace (PutUserToWorkspaceRequest) returns (UserMessage);
+  /* Удалить юзера из воркспейса */
+  rpc RemoveUserFromWorkspace (RemoveUserFromWorkspaceRequest) returns (google.protobuf.Empty);
+
+  /* Добавить видимых игроков пользователю в воркспейсе */
+	rpc AddVisiblePlayersToUser (AddVisiblePlayersToUserRequest) returns (AddVisiblePlayersToUserResponse);
+	/* Удалить видимых игроков пользователя в воркспейсе */
+	rpc RemoveVisiblePlayersFromUser (RemoveVisiblePlayersFromUserRequest) returns (google.protobuf.Empty);
+}
+
+/*
+ __  __           _      _
+|  \/  | ___   __| | ___| |
+| |\/| |/ _ \ / _` |/ _ \ |
+| |  | | (_) | (_| |  __/ |
+|_|  |_|\___/ \__,_|\___|_|
+ */
+message Pagination {
+  message Request {
+    int32 per_page_count = 1;
+    int32 page = 2;
+  }
+  message Response {
+    optional int32 next_page = 1;
+    optional int32 previous_page = 2;
+    int32 total_pages = 3;
+    int32 per_page_count = 4;
+  }
+}
+
+message GUID {
+  string value = 1;
+}
+
+enum WorkspaceUserRoleMessage {
+  ROLE_UNKNOWN = 0;
+  ROLE_MANAGER = 1;
+  ROLE_OWNER = 2;
+}
+
+/* Воркспейс без отношения с юзером */
+message WorkspaceMessage {
+  GUID workspace_guid = 1;
+  GUID club_guid = 2;
+}
+
+/* Юзер с ролью в воркспейсе. WorkspaceId косвенно находится в реквесте или ответе */
+message UserMessage {
+//  GUID user_workspace_guid = 5;  <- такого нету, HasNoKey
+  GUID workspace_guid = 4;
+	GUID club_guid = 6;
+  GUID user_guid = 1;
+  WorkspaceUserRoleMessage role_in_workspace = 2;
+	optional string user_workspace_description = 3;
+	repeated string visible_player_guids = 7;
+}
+
+
+/*
+ ____  ____   ____
+|  _ \|  _ \ / ___|
+| |_) | |_) | |
+|  _ <|  __/| |___
+|_| \_\_|    \____|
+ */
+message GetUserWorkspacesRequest {
+  GUID user_guid = 1;
+}
+
+message GetUserWorkspacesResponse {
+  repeated UserMessage user_in_workspaces = 1;
+}
+
+
+message GetWorkspaceRequest {
+  oneof query {
+    GUID workspace_guid = 1;
+    GUID club_guid = 2;
+  }
+}
+
+message GetWorkspaceResponse {
+  WorkspaceMessage workspace = 4;
+}
+
+
+message GetWorkspaceWithUsersRequest {
+  oneof query {
+    GUID workspace_guid = 1;
+    GUID club_guid = 2;
+  }
+}
+
+message GetWorkspaceWithUsersResponse {
+	WorkspaceMessage workspace = 4;
+
+	repeated UserMessage users = 3;
+}
+
+
+message GetAllWorkspacesResponse {
+	repeated WorkspaceMessage workspaces = 1;
+}
+
+
+message GetUserInWorkspaceRequest {
+  oneof query {
+    GUID workspace_guid = 1;
+    GUID club_guid = 2;
+  }
+  GUID user_guid = 3;
+}
+
+
+message CreateWorkspaceRequest {
+  GUID club_guid = 1;
+}
+
+message CreateWorkspaceResponse {
+	WorkspaceMessage workspace = 1;
+}
+
+
+message PutUserToWorkspaceRequest {
+	oneof query {
+		GUID workspace_guid = 1;
+		GUID club_guid = 5;
+	}
+  GUID user_guid = 2;
+  WorkspaceUserRoleMessage user_role = 3;
+	optional string user_workspace_description = 4;
+}
+
+
+message RemoveUserFromWorkspaceRequest {
+	oneof query {
+		GUID workspace_guid = 1;
+		GUID club_guid = 3;
+	}
+  GUID user_guid = 2;
+}
+
+
+message AddVisiblePlayersToUserRequest {
+	repeated string player_guids = 1;
+	oneof query {
+		GUID workspace_guid = 2;
+		GUID club_guid = 4;
+	}
+	GUID user_guid = 3;
+}
+
+message AddVisiblePlayersToUserResponse {
+	repeated string player_ids = 1;
+}
+
+
+message RemoveVisiblePlayersFromUserRequest {
+	repeated string player_guids = 1;
+	oneof query {
+		GUID workspace_guid = 2;
+		GUID club_guid = 4;
+	}
+	GUID user_guid = 3;
+}
