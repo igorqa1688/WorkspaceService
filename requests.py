@@ -121,7 +121,7 @@ def get_user_workspaces(user_guid: str) -> str:
         request = workspace_service_pb2.GetUserWorkspacesRequest(
             user_guid=workspace_service_pb2.GUID(value=user_guid))
         try:
-            response = stub.GetWorkspaceWithUsers(request)
+            response = stub.GetUserWorkspaces(request)
             return response
         except Exception as e:
             return e
@@ -223,12 +223,18 @@ if __name__ == "__main__":
     workspace_guid = all_workspaces[0].workspace_guid.value
     workspace_club_guid = all_workspaces[0].club_guid.value
 
+    # CreateWorkspace
     print("\ncreate_workspace response:\n", create_workspace(club_guid), "\n--")
-    print(f"\nget_workspace:\n{get_workspace(workspace_guid, workspace_club_guid)}\n----")
+    # AllWorkspaces
     print(f"{all_workspaces[0]}, user_guid: {user_guid}\n--")
+    # PutUserToWorkspace
     print("response put_user_to_workspace:\n", put_user_to_workspace(workspace_guid, workspace_club_guid, user_guid, user_role, user_workspace_description), "\n--")
-    print("response add_visible_player_to_user\n", add_visible_players_to_user(players_guid, workspace_guid, workspace_club_guid, user_guid), "\n--")
+    # AddVisisblePlayersToUser
+    print("response add_visible_players_to_user\n", add_visible_players_to_user(players_guid, workspace_guid, workspace_club_guid, user_guid), "\n--")
+    # GetUserInWorkspace
     print(f"response get_user_in_workspace:\n{get_user_in_workspace(workspace_guid, workspace_club_guid, user_guid)}\n---")
+    # GetUserWorkspaces
+    print(f"response get_user_workspaces:\n{get_user_workspaces(user_guid)}\n---")
 
     #GetWorkspaceWithUsers
     print(f"response get_workspace_with_users:\n{get_workspace_with_users(workspace_guid, workspace_club_guid)}\n---")
@@ -240,5 +246,7 @@ if __name__ == "__main__":
     print(f"response get_workspace_by_club_guid:\n{get_workspace_by_club_guid(workspace_club_guid)}\n---")
     print(f"response get_workspace_by_workspace_guid:\n{get_workspace_by_workspace_guid(workspace_guid)}\n---")
 
+    # RemoveUserFromWorkspace
     #print(f"response remove_user_from_workspace:\n{remove_user_from_workspace(workspace_guid, workspace_club_guid, user_guid)}\n---")
+    # RemoveVisiblePlayersFromUser
     print(f"response remove_visible_players_from_user:\n{remove_visible_players_from_user(workspace_guid, workspace_club_guid, user_guid)}\n---")
