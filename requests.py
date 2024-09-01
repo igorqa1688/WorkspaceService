@@ -246,7 +246,7 @@ if __name__ == "__main__":
     print(f"response get_workspace_by_club_guid:\n{get_workspace_by_club_guid(workspace_club_guid)}\n---")
     print(f"response get_workspace_by_workspace_guid:\n{get_workspace_by_workspace_guid(workspace_guid)}\n---")
 
-    # RemoveUserFromWorkspace
-    #print(f"response remove_user_from_workspace:\n{remove_user_from_workspace(workspace_guid, workspace_club_guid, user_guid)}\n---")
     # RemoveVisiblePlayersFromUser
     print(f"response remove_visible_players_from_user:\n{remove_visible_players_from_user(workspace_guid, workspace_club_guid, user_guid)}\n---")
+    # RemoveUserFromWorkspace
+    print(f"response remove_user_from_workspace:\n{remove_user_from_workspace(workspace_guid, workspace_club_guid, user_guid)}\n---")
