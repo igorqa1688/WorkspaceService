@@ -216,7 +216,7 @@ if __name__ == "__main__":
     # Заполнение списка players_guid
     players_guid = []
     for i in range(2):
-        players_guid.append((generate_guid()))
+        players_guid.append(generate_guid())
     user_workspace_description = "UserDescription"
     user_role = "ROLE_OWNER"
     all_workspaces = get_all_workspaces().workspaces
