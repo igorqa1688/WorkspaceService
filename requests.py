@@ -219,6 +219,7 @@ if __name__ == "__main__":
         players_guid.append(generate_guid())
     user_workspace_description = "UserDescription"
     user_role = "ROLE_OWNER"
+
     all_workspaces = get_all_workspaces().workspaces
     workspace_guid = all_workspaces[0].workspace_guid.value
     workspace_club_guid = all_workspaces[0].club_guid.value
