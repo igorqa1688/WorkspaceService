@@ -127,15 +127,21 @@ def get_user_workspaces(user_guid: str) -> str:
             return e
 
 
-def get_user_in_workspace(workspace_guid: str, club_guid: str, user_guid: str) -> str:
+def get_user_in_workspace(workspace_guid: None, club_guid: None, user_guid: str) -> str:
     with grpc.insecure_channel(server) as channel:
         stub = workspace_service_pb2_grpc.WorkspaceServiceStub(channel)
-
-        request = workspace_service_pb2.GetUserInWorkspaceRequest(
-            workspace_guid=workspace_service_pb2.GUID(value=workspace_guid),
-            club_guid=workspace_service_pb2.GUID(value=club_guid),
-            user_guid=workspace_service_pb2.GUID(value=user_guid)
-        )
+        if workspace_guid:
+            request = workspace_service_pb2.GetUserInWorkspaceRequest(
+                workspace_guid=workspace_service_pb2.GUID(value=workspace_guid),
+                user_guid=workspace_service_pb2.GUID(value=user_guid)
+            )
+            print('by workspace_guid')
+        elif club_guid:
+            request = workspace_service_pb2.GetUserInWorkspaceRequest(
+                club_guid=workspace_service_pb2.GUID(value=club_guid),
+                user_guid=workspace_service_pb2.GUID(value=user_guid)
+            )
+            print('by club_guid')
         try:
             response = stub.GetUserInWorkspace(request)
             return response
@@ -143,17 +149,23 @@ def get_user_in_workspace(workspace_guid: str, club_guid: str, user_guid: str) -
             return f"error: {e}"
 
 
-def put_user_to_workspace(workspace_guid: str, club_guid: str, user_guid: str, user_role: str, user_workspace_description: str ) -> str:
+def put_user_to_workspace(workspace_guid: None, club_guid: None, user_guid: str, user_role: str, user_workspace_description: None ) -> str:
     with grpc.insecure_channel(server) as channel:
         stub = workspace_service_pb2_grpc.WorkspaceServiceStub(channel)
-
-        request = workspace_service_pb2.PutUserToWorkspaceRequest(
-            club_guid=workspace_service_pb2.GUID(value=club_guid),
-            user_guid=workspace_service_pb2.GUID(value=user_guid),
-            user_role=workspace_service_pb2.WorkspaceUserRoleMessage.Value(user_role),
-            user_workspace_description=user_workspace_description,
-            workspace_guid=workspace_service_pb2.GUID(value=workspace_guid)
-        )
+        if workspace_guid:
+            request = workspace_service_pb2.PutUserToWorkspaceRequest(
+                user_guid=workspace_service_pb2.GUID(value=user_guid),
+                user_role=workspace_service_pb2.WorkspaceUserRoleMessage.Value(user_role),
+                user_workspace_description=user_workspace_description,
+                workspace_guid=workspace_service_pb2.GUID(value=workspace_guid)
+            )
+        elif club_guid:
+            request = workspace_service_pb2.PutUserToWorkspaceRequest(
+                club_guid=workspace_service_pb2.GUID(value=club_guid),
+                user_guid=workspace_service_pb2.GUID(value=user_guid),
+                user_role=workspace_service_pb2.WorkspaceUserRoleMessage.Value(user_role),
+                user_workspace_description=user_workspace_description,
+            )
         try:
             response = stub.PutUserToWorkspace(request)
             return response
@@ -161,20 +173,48 @@ def put_user_to_workspace(workspace_guid: str, club_guid: str, user_guid: str, u
             return f"error: {e}"
 
 
-def add_visible_players_to_user(player_guids: str, workspace_guid: str, club_guid: str, user_guid: str) -> str:
+def put_user_to_workspace_without_user_workspace_description(workspace_guid: None, club_guid: None, user_guid: str, user_role: str) -> str:
     with grpc.insecure_channel(server) as channel:
         stub = workspace_service_pb2_grpc.WorkspaceServiceStub(channel)
-        request = workspace_service_pb2.AddVisiblePlayersToUserRequest(
-            club_guid=workspace_service_pb2.GUID(value=club_guid),
-            user_guid=workspace_service_pb2.GUID(value=user_guid),
-            player_guids=player_guids,
-            workspace_guid=workspace_service_pb2.GUID(value=workspace_guid)
+        if workspace_guid:
+            request = workspace_service_pb2.PutUserToWorkspaceRequest(
+                user_guid=workspace_service_pb2.GUID(value=user_guid),
+                user_role=workspace_service_pb2.WorkspaceUserRoleMessage.Value(user_role),
+                workspace_guid=workspace_service_pb2.GUID(value=workspace_guid)
+            )
+        elif club_guid:
+            request = workspace_service_pb2.PutUserToWorkspaceRequest(
+                club_guid=workspace_service_pb2.GUID(value=club_guid),
+                user_guid=workspace_service_pb2.GUID(value=user_guid),
+                user_role=workspace_service_pb2.WorkspaceUserRoleMessage.Value(user_role),
+            )
+        try:
+            response = stub.PutUserToWorkspace(request)
+            return response
+        except Exception as e:
+            return f"error: {e}"
+
+
+def add_visible_players_to_user(player_guids: list, workspace_guid: None, club_guid: None, user_guid: str) -> str:
+    with grpc.insecure_channel(server) as channel:
+        stub = workspace_service_pb2_grpc.WorkspaceServiceStub(channel)
+        if workspace_guid:
+            request = workspace_service_pb2.AddVisiblePlayersToUserRequest(
+                user_guid=workspace_service_pb2.GUID(value=user_guid),
+                player_guids=player_guids,
+                workspace_guid=workspace_service_pb2.GUID(value=workspace_guid)
         )
+        elif club_guid:
+            request = workspace_service_pb2.AddVisiblePlayersToUserRequest(
+                club_guid=workspace_service_pb2.GUID(value=club_guid),
+                user_guid=workspace_service_pb2.GUID(value=user_guid),
+                player_guids=player_guids,
+            )
         try:
             response = stub.AddVisiblePlayersToUser(request)
             return response
         except Exception as e:
-            return f"error: {e}"
+            return e
 
 
 def remove_user_from_workspace(workspace_guid: str, club_guid: str, user_guid: str) -> str:
@@ -228,10 +268,13 @@ if __name__ == "__main__":
     print("\ncreate_workspace response:\n", create_workspace(club_guid), "\n--")
     # AllWorkspaces
     print(f"{all_workspaces[0]}, user_guid: {user_guid}\n--")
+
     # PutUserToWorkspace
     print("response put_user_to_workspace:\n", put_user_to_workspace(workspace_guid, workspace_club_guid, user_guid, user_role, user_workspace_description), "\n--")
+
     # AddVisisblePlayersToUser
     print("response add_visible_players_to_user\n", add_visible_players_to_user(players_guid, workspace_guid, workspace_club_guid, user_guid), "\n--")
+
     # GetUserInWorkspace
     print(f"response get_user_in_workspace:\n{get_user_in_workspace(workspace_guid, workspace_club_guid, user_guid)}\n---")
     # GetUserWorkspaces

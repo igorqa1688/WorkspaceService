@@ -39,3 +39,40 @@ def generate_random_string(length: int) -> str:
     # Перемешиваем символы
     return random_string
 
+
+# Генерация случайного описания workspace
+def generate_workspace_description(length: int) -> str:
+    # Создаем списки разных типов символов
+    lower_chars = 'abcdefghijklmnopqrstuvwxyz'
+    upper_chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    cyrillic_chars = 'АаБбВвГгДдЕеЁёЖжЗзИиЙйКкЛлМмНнОоПпРрСсТтУуФфХхЦцЧчШшЩщЪъЫыЬьЭэЮюЯя'
+    digits = '0123456789'
+    special_chars = '!@#$%^&*()_+~`|}{[]:;?><,./-='
+
+    # Создаем список всех доступных символов
+    all_chars = lower_chars + upper_chars + digits + special_chars + cyrillic_chars
+
+    # Создаем начальные части строки
+    result = random.choice(digits)
+    result += random.choice(special_chars)
+    result += random.choice(lower_chars)
+    result += random.choice(upper_chars)
+    result += random.choice(cyrillic_chars)
+
+    # Заполняем оставшуюся часть случайными символами
+    while len(result) < length:
+        result += random.choice(all_chars)
+
+    # Перемешиваем символы
+    return ''.join(random.sample(result, len(result)))
+
+
+def random_role(roles: list) -> str:
+    random_index = random.randint(0, len(roles) - 1)
+
+    if random_index == len(user_roles):
+        random_role = "ROLE INDEX EQUAL ARRAY LENGTH"
+        return random_role
+    else:
+        random_role = roles[random_index]
+        return random_role

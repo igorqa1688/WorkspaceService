@@ -1,1 +1,2 @@
 server = "10.110.66.7:8080"
+roles = ["ROLE_UNKNOWN", "ROLE_MANAGER", "ROLE_OWNER"]
