@@ -2,7 +2,8 @@ import pytest
 from requests import get_all_workspaces, create_workspace, get_workspace_by_workspace_guid, get_workspace_by_club_guid
 from requests import (get_workspace, put_user_to_workspace, add_visible_players_to_user,
                       put_user_to_workspace_without_user_workspace_description, get_user_in_workspace,
-                      get_user_workspaces, get_workspace_with_users)
+                      get_user_workspaces, get_workspace_with_users, remove_user_from_workspace,
+                      remove_visible_players_from_user)
 from functions import generate_guid, generate_workspace_description, random_role
 from global_vars import roles
 
@@ -382,10 +383,6 @@ def test_add_visible_players_dublicate_user():
 def test_get_workspace_with_users_by_workspace_guid_one_user():
     club_guid = generate_guid()
     user_guid = generate_guid()
-    players_guid = []
-    player_guid = generate_guid()
-    for i in range(2):
-        players_guid.append(player_guid)
     user_role = roles[1]
     # Создание workspace
     workspace = create_workspace(club_guid)
@@ -393,7 +390,161 @@ def test_get_workspace_with_users_by_workspace_guid_one_user():
     workspace_guid = workspace.workspace.workspace_guid.value
     # Добавление user в workspace
     put_user_to_workspace_without_user_workspace_description(workspace_guid, club_guid,  user_guid, user_role)
+
+    # Отправка тестируемого запроса
     response = get_workspace_with_users(workspace_guid, None)
-    print(f"\n{response}\n")
-    response_user_guid = response.users[0].user_guid.value
-    assert response_user_guid == user_guid
+
+    assert response.users[0].user_guid.value == user_guid
+    assert response.users[0].role_in_workspace == roles.index(user_role)
+    assert response.users[0].workspace_guid.value == workspace_guid
+    assert response.users[0].club_guid.value == club_guid
+    assert response.workspace.workspace_guid.value == workspace_guid
+    assert response.workspace.club_guid.value == club_guid
+
+
+# test GetWorkspaceWithUsers by club_guid
+@pytest.mark.smoke
+def test_get_workspace_with_users_by_club_guid_one_user():
+    club_guid = generate_guid()
+    user_guid = generate_guid()
+    user_role = roles[1]
+    # Создание workspace
+    workspace = create_workspace(club_guid)
+    # Получение workspace_guid созданного workspace
+    workspace_guid = workspace.workspace.workspace_guid.value
+    # Добавление user в workspace
+    put_user_to_workspace_without_user_workspace_description(workspace_guid, club_guid,  user_guid, user_role)
+
+    # Отправка тестируемого запроса
+    response = get_workspace_with_users(None, club_guid)
+
+    assert response.users[0].user_guid.value == user_guid
+    assert response.users[0].role_in_workspace == roles.index(user_role)
+    assert response.users[0].workspace_guid.value == workspace_guid
+    assert response.users[0].club_guid.value == club_guid
+    assert response.workspace.workspace_guid.value == workspace_guid
+    assert response.workspace.club_guid.value == club_guid
+
+
+# test GetWorkspaceWithUsers two users
+@pytest.mark.smoke
+def test_get_workspace_with_users_two_user():
+    club_guid = generate_guid()
+    users_guids = []
+    for i in range(2):
+        users_guids.append(generate_guid())
+    user_role = roles[1]
+    # Создание workspace
+    workspace = create_workspace(club_guid)
+    # Получение workspace_guid созданного workspace
+    workspace_guid = workspace.workspace.workspace_guid.value
+    # Добавление user в workspace
+    for user in users_guids:
+        put_user_to_workspace_without_user_workspace_description(workspace_guid, club_guid,  user, user_role)
+
+    # Отправка тестируемого запроса
+    response = get_workspace_with_users(workspace_guid, None)
+
+    for user in range(len(response.users)):
+        assert response.users[user].user_guid.value in users_guids
+        assert response.users[user].role_in_workspace == roles.index(user_role)
+        assert response.users[user].workspace_guid.value == workspace_guid
+        assert response.users[user].club_guid.value == club_guid
+        assert response.workspace.workspace_guid.value == workspace_guid
+        assert response.workspace.club_guid.value == club_guid
+
+
+# test removeUserFromWorkspace
+@pytest.mark.smoke
+def test_remove_user_from_workspace_by_workspace_guid():
+    club_guid = generate_guid()
+    user_guid = generate_guid()
+    user_role = roles[1]
+
+    # Создание workspace
+    workspace = create_workspace(club_guid)
+    # Получение workspace_guid созданного workspace
+    workspace_guid = workspace.workspace.workspace_guid.value
+    # Добавление user в workspace
+    put_user_to_workspace_without_user_workspace_description(workspace_guid, None,  user_guid, user_role)
+
+    # Отправка тестируемого запроса
+    response = remove_user_from_workspace(workspace_guid, None, user_guid)
+    assert response == 0
+
+
+# test removeVisiblePlayerFromUser one player by club_guid
+@pytest.mark.smoke
+def test_remove_visible_players_from_user_by_club_guid_one_player():
+    club_guid = generate_guid()
+    user_guid = generate_guid()
+    user_role = roles[1]
+    players_guids = []
+    for i in range(1):
+        players_guids.append(generate_guid())
+    # Создание workspace
+    workspace = create_workspace(club_guid)
+    # Получение workspace_guid созданного workspace
+    workspace_guid = workspace.workspace.workspace_guid.value
+    # Добавление user в workspace
+    put_user_to_workspace_without_user_workspace_description(workspace_guid, None,  user_guid, user_role)
+    # Добавление player к игроку
+    add_visible_players_to_user(players_guids, workspace_guid, club_guid, user_guid)
+
+    # Отправка тестируемого запроса
+    response = remove_visible_players_from_user(None, club_guid, user_guid, players_guids)
+    assert response == 0
+
+
+# test removeVisiblePlayerFromUser two players by workspace_guid
+@pytest.mark.smoke
+def test_remove_visible_players_from_user_by_workspace_guid_two_player():
+    club_guid = generate_guid()
+    user_guid = generate_guid()
+    user_role = roles[1]
+    players_guids = []
+    for i in range(2):
+        players_guids.append(generate_guid())
+    # Создание workspace
+    workspace = create_workspace(club_guid)
+    # Получение workspace_guid созданного workspace
+    workspace_guid = workspace.workspace.workspace_guid.value
+    # Добавление user в workspace
+    put_user_to_workspace_without_user_workspace_description(workspace_guid, None,  user_guid, user_role)
+    # Добавление player к игроку
+    add_visible_players_to_user(players_guids, workspace_guid, club_guid, user_guid)
+
+    # Отправка тестируемого запроса
+    response = remove_visible_players_from_user(workspace_guid, None, user_guid, players_guids)
+    assert response == 0
+
+
+# test removeVisiblePlayerFromUser 1/2 players by club_guid
+@pytest.mark.smoke
+def test_remove_visible_players_from_user_by_workspace_guid_two_player():
+    club_guid = generate_guid()
+    user_guid = generate_guid()
+    user_role = roles[1]
+    players_guids = []
+    for i in range(2):
+        players_guids.append(generate_guid())
+    deleted_player = [players_guids[0]]
+    # Создание workspace
+    workspace = create_workspace(club_guid)
+    # Получение workspace_guid созданного workspace
+    workspace_guid = workspace.workspace.workspace_guid.value
+    # Добавление user в workspace
+    put_user_to_workspace_without_user_workspace_description(workspace_guid, None,  user_guid, user_role)
+    # Добавление player к игроку
+    add_visible_players_to_user(players_guids, workspace_guid, club_guid, user_guid)
+    # Отправка тестируемого запроса
+    get_workspace_with_users(workspace_guid, None)
+    response = remove_visible_players_from_user(None, club_guid, user_guid, deleted_player)
+    workspace_after_delete_player = get_workspace_with_users(workspace_guid, None)
+    players_in_workspace = workspace_after_delete_player.users[0].visible_player_guids
+
+    assert response == 0
+    assert len(players_in_workspace) == 1
+    assert deleted_player[0] not in players_in_workspace
+
+

@@ -56,14 +56,17 @@ def get_workspace_by_club_guid(club_guid: str) -> str:
             return e
 
 
-def get_workspace(workspace_guid: str, club_guid: str) -> str:
+def get_workspace(workspace_guid: None, club_guid: None) -> str:
     with grpc.insecure_channel(server) as channel:
         stub = workspace_service_pb2_grpc.WorkspaceServiceStub(channel)
-
-        request = workspace_service_pb2.GetWorkspaceRequest(
-            club_guid=workspace_service_pb2.GUID(value=f"{club_guid}"),
-            workspace_guid=workspace_service_pb2.GUID(value=f"{workspace_guid}")
-        )
+        if workspace_guid:
+            request = workspace_service_pb2.GetWorkspaceRequest(
+                workspace_guid=workspace_service_pb2.GUID(value=workspace_guid)
+            )
+        elif club_guid:
+            request = workspace_service_pb2.GetWorkspaceRequest(
+                club_guid=workspace_service_pb2.GUID(value=club_guid)
+            )
         try:
             response = stub.GetWorkspace(request)
             return response
@@ -220,32 +223,48 @@ def add_visible_players_to_user(player_guids: list, workspace_guid: None, club_g
             return e
 
 
-def remove_user_from_workspace(workspace_guid: str, club_guid: str, user_guid: str) -> str:
+def remove_user_from_workspace(workspace_guid: None, club_guid: None, user_guid: str) -> str:
     with grpc.insecure_channel(server) as channel:
         stub = workspace_service_pb2_grpc.WorkspaceServiceStub(channel)
-        request = workspace_service_pb2.RemoveUserFromWorkspaceRequest(
-            club_guid=workspace_service_pb2.GUID(value=club_guid),
-            user_guid=workspace_service_pb2.GUID(value=user_guid),
-            workspace_guid=workspace_service_pb2.GUID(value=workspace_guid)
-        )
+        if workspace_guid:
+            request = workspace_service_pb2.RemoveUserFromWorkspaceRequest(
+                workspace_guid=workspace_service_pb2.GUID(value=workspace_guid),
+                user_guid=workspace_service_pb2.GUID(value=user_guid)
+            )
+        elif club_guid:
+            request = workspace_service_pb2.RemoveUserFromWorkspaceRequest(
+                club_guid=workspace_service_pb2.GUID(value=club_guid),
+                user_guid=workspace_service_pb2.GUID(value=user_guid)
+            )
         try:
-            response = stub.RemoveUserFromWorkspace(request)
-            return response
+            stub.RemoveUserFromWorkspace(request)
+            return 0
         except Exception as e:
-            return f"error: {e}"
+            return e
 
 
-def remove_visible_players_from_user(workspace_guid: str, club_guid: str, user_guid: str) -> str:
+
+def remove_visible_players_from_user(workspace_guid: None, club_guid: None, user_guid: str, player_guids: str) -> str:
     with grpc.insecure_channel(server) as channel:
         stub = workspace_service_pb2_grpc.WorkspaceServiceStub(channel)
-        request = workspace_service_pb2.RemoveVisiblePlayersFromUserRequest(
-            club_guid=workspace_service_pb2.GUID(value=club_guid),
-            user_guid=workspace_service_pb2.GUID(value=user_guid),
-            workspace_guid=workspace_service_pb2.GUID(value=workspace_guid)
-        )
+        if workspace_guid:
+            request = workspace_service_pb2.RemoveVisiblePlayersFromUserRequest(
+                user_guid=workspace_service_pb2.GUID(value=user_guid),
+                workspace_guid=workspace_service_pb2.GUID(value=workspace_guid),
+                player_guids=player_guids
+            )
+        elif club_guid:
+            request = workspace_service_pb2.RemoveVisiblePlayersFromUserRequest(
+                club_guid=workspace_service_pb2.GUID(value=club_guid),
+                user_guid=workspace_service_pb2.GUID(value=user_guid),
+                player_guids=player_guids
+
+            )
+        else:
+            return f"error remove_visible_players_from_user: workspace_guid {workspace_guid}, club_guid {club_guid}"
         try:
-            response = stub.RemoveVisiblePlayersFromUser(request)
-            return response
+            stub.RemoveVisiblePlayersFromUser(request)
+            return 0
         except Exception as e:
             return f"error: {e}"
 
@@ -293,7 +312,10 @@ if __name__ == "__main__":
     print(f"response get_workspace_by_club_guid:\n{get_workspace_by_club_guid(workspace_club_guid)}\n---")
     print(f"response get_workspace_by_workspace_guid:\n{get_workspace_by_workspace_guid(workspace_guid)}\n---")
 
+
     # RemoveVisiblePlayersFromUser
-    print(f"response remove_visible_players_from_user:\n{remove_visible_players_from_user(workspace_guid, workspace_club_guid, user_guid)}\n---")
+    print(f"response remove_visible_players_from_user:\n{remove_visible_players_from_user(workspace_guid, None, user_guid, players_guid)}\n---")
     # RemoveUserFromWorkspace
-    print(f"response remove_user_from_workspace:\n{remove_user_from_workspace(workspace_guid, workspace_club_guid, user_guid)}\n---")
+    print(f"response remove_user_from_workspace:\n{remove_user_from_workspace(workspace_guid, club_guid, user_guid)}\n---")
+
+
