@@ -1,5 +1,5 @@
 import pytest
-from requests import get_all_workspaces, create_workspace, get_workspace_by_workspace_guid, get_workspace_by_club_guid
+from requests import get_all_workspaces, create_workspace
 from requests import (get_workspace, put_user_to_workspace, add_visible_players_to_user,
                       put_user_to_workspace_without_user_workspace_description, get_user_in_workspace,
                       get_user_workspaces, get_workspace_with_users, remove_user_from_workspace,
@@ -35,7 +35,7 @@ def test_get_workspace_by_workspace_guid():
     workspace = create_workspace(club_guid)
     # Получение workspace_guid созданного workspace
     workspace_guid = workspace.workspace.workspace_guid.value
-    response = get_workspace_by_workspace_guid(workspace_guid)
+    response = get_workspace(workspace_guid, None)
     response_workspace_guid = response.workspace.workspace_guid.value
     response_club_guid = response.workspace.club_guid.value
 
@@ -52,12 +52,46 @@ def test_get_workspace_by_club_guid():
     # Получение workspace_guid созданного workspace
     workspace_guid = workspace.workspace.workspace_guid.value
 
-    response = get_workspace_by_club_guid(club_guid)
+    response = get_workspace(None, club_guid)
     response_workspace_guid = response.workspace.workspace_guid.value
     response_club_guid = response.workspace.club_guid.value
 
     assert response_workspace_guid == workspace_guid
     assert response_club_guid == club_guid
+
+
+# test GetWorkspace с несуществующим workspace_guid
+@pytest.mark.negative
+def test_get_workspace_workspace_guid_not_exist():
+    response = get_workspace(generate_guid(), None)
+    # Распаковка ответа
+    status_code = response.code()
+    grpc_details = response.details()
+    assert status_code.value[0] == 5
+    assert grpc_details == "Object not found."
+
+
+# test GetWorkspace с несуществующим workspace_guid
+@pytest.mark.negative
+def test_get_workspace_club_guid_not_exist():
+    response = get_workspace(None, generate_guid())
+    # Распаковка ответа
+    status_code = response.code()
+    grpc_details = response.details()
+    assert status_code.value[0] == 5
+    assert grpc_details == "Object not found."
+
+
+# test GetWorkspace без параметров
+@pytest.mark.negative
+def test_get_workspace_without_params():
+    response = get_workspace(None, None)
+    print(response)
+    # Распаковка ответа
+    status_code = response.code()
+    grpc_details = response.details()
+    assert status_code.value[0] == 13
+    assert grpc_details == "Internal Error. Check service logs"
 
 
 # test GetWorkspace by club_guid, workspace_guid
@@ -106,7 +140,7 @@ def test_put_user_to_workspace_with_user_workspace_description():
 
 # test PutUserToWorkspace by workspace role ROLE_MANAGER with user_workspace_description
 @pytest.mark.smoke
-def test_put_user_to_workspace_role_owner():
+def test_put_user_to_workspace_role_manager():
     club_guid = generate_guid()
     user_guid = generate_guid()
     user_role = roles[1]
@@ -142,7 +176,7 @@ def test_put_user_to_workspace_without_user_workspace_description():
     # Получение workspace_guid созданного workspace
     workspace_guid = workspace.workspace.workspace_guid.value
     # Добавление юзера в в workspace
-    response = put_user_to_workspace_without_user_workspace_description(workspace_guid, club_guid,  user_guid, user_role)
+    response = put_user_to_workspace_without_user_workspace_description(None, club_guid,  user_guid, user_role)
     # Распаковка ответа
     response_workspace_guid = response.workspace_guid.value
     response_club_guid = response.club_guid.value
@@ -197,6 +231,53 @@ def test_add_visible_players_to_user_by_club_guid():
     assert response.player_ids[0] == players_guid[0]
 
 
+# test AddVisisblePlayersToUser one player by workspace_guid user состоит в другом workspace
+@pytest.mark.negative
+def test_add_visible_players_to_user_another_workspace():
+    user_guid = generate_guid()
+    players_guid = [generate_guid()]
+    user_role = roles[2]
+
+    # Создание workspace в который будет добавлен user
+    workspace_a = create_workspace(generate_guid())
+    # Создание workspace в который будет добавляться player
+    workspace_b = create_workspace(generate_guid())
+    # Получение workspace_guid созданного workspace в который будет добавлен user
+    workspace_guid_a = workspace_a.workspace.workspace_guid.value
+    workspace_guid_b = workspace_b.workspace.workspace_guid.value
+    # Добавление user в workspace_a
+    put_user_to_workspace_without_user_workspace_description(workspace_guid_a, None,  user_guid, user_role)
+
+    # Отправка запроса на добавление player к user состоящем в другом workspace
+    response = add_visible_players_to_user(players_guid, workspace_guid_b, None, user_guid)
+
+    # Распаковка ответа
+    status_code = response.code()
+    grpc_details = response.details()
+    assert status_code.value[0] == 5
+    assert grpc_details == "User not found in workspace."
+
+
+# test AddVisisblePlayersToUser without players by workspace_guid
+@pytest.mark.smoke
+def test_add_visible_players_to_user_without_players():
+    club_guid = generate_guid()
+    user_guid = generate_guid()
+    players_guid = []
+    user_role = roles[2]
+
+    # Создание workspace
+    workspace = create_workspace(club_guid)
+    # Получение workspace_guid созданного workspace
+    workspace_guid = workspace.workspace.workspace_guid.value
+    # Добавление user в workspace
+    put_user_to_workspace_without_user_workspace_description(workspace_guid, None,  user_guid, user_role)
+
+    # Отправка запроса на добавление player к user
+    response = add_visible_players_to_user(players_guid, workspace_guid, None, user_guid)
+    assert len(response.player_ids) == 0
+
+
 # test AddVisisblePlayersToUser two players
 @pytest.mark.smoke
 def test_add_visible_players_two_players():
@@ -216,7 +297,7 @@ def test_add_visible_players_two_players():
     put_user_to_workspace_without_user_workspace_description(workspace_guid, club_guid,  user_guid, user_role)
 
     # Отправка запроса на добавление player к user
-    response = add_visible_players_to_user(players_guid, workspace_guid, club_guid, user_guid)
+    response = add_visible_players_to_user(players_guid, workspace_guid, None, user_guid)
 
     assert len(response.player_ids) == players_count
     for i in range(len(response.player_ids)):
@@ -306,7 +387,6 @@ def test_get_user_workspaces_one_workspace():
 
     # Отправка запроса на получение workspaces юзера - тестируемый запрос
     response = get_user_workspaces(user_guid)
-    print(response)
     assert workspace_guid == response.user_in_workspaces[0].workspace_guid.value
     assert club_guid == response.user_in_workspaces[0].club_guid.value
     assert user_guid == response.user_in_workspaces[0].user_guid.value
@@ -314,6 +394,32 @@ def test_get_user_workspaces_one_workspace():
     assert len(response.user_in_workspaces[0].visible_player_guids) == players_count
     for i in range(len(response.user_in_workspaces[0].visible_player_guids)):
         assert response.user_in_workspaces[0].visible_player_guids[i] in players_guid, f"{response.visible_player_guids[i]} not in players_guid, index: {i}"
+
+
+# test getUserWorkspaces one workspace
+@pytest.mark.negative
+def test_get_user_workspaces_one_workspace():
+    user_guid = ""
+
+    # Отправка запроса на получение workspaces юзера - тестируемый запрос
+    response = get_user_workspaces(user_guid)
+    # Распаковка ответа
+    status_code = response.code()
+    grpc_details = response.details()
+    assert status_code.value[0] == 13
+    assert grpc_details == "Internal Error. Check service logs"
+
+
+# test getUserWorkspaces without workspace(s)
+@pytest.mark.smoke
+def test_get_user_workspaces_without_workspaces():
+    user_guid = generate_guid()
+
+    # Отправка запроса на получение workspaces юзера - тестируемый запрос
+    response = get_user_workspaces(user_guid)
+
+    assert len(str(response)) == 0
+
 
 
 # test getUserWorkspaces one workspace
@@ -354,7 +460,7 @@ def test_get_user_workspaces_two_workspace():
 
 # test AddVisisblePlayersToUser добавление уже добавленного player
 @pytest.mark.negative
-def test_add_visible_players_dublicate_user():
+def test_add_visible_players_dublicate_player():
     club_guid = generate_guid()
     user_guid = generate_guid()
     players_guid = []
@@ -424,6 +530,23 @@ def test_get_workspace_with_users_by_club_guid_one_user():
     assert response.users[0].club_guid.value == club_guid
     assert response.workspace.workspace_guid.value == workspace_guid
     assert response.workspace.club_guid.value == club_guid
+
+
+# test GetWorkspaceWithUsers by club_guid
+@pytest.mark.smoke
+def test_get_workspace_without_users():
+    club_guid = generate_guid()
+    user_guid = generate_guid()
+    # Создание workspace
+    workspace = create_workspace(club_guid)
+    # Получение workspace_guid созданного workspace
+    workspace_guid = workspace.workspace.workspace_guid.value
+
+    # Отправка тестируемого запроса
+    response = get_workspace_with_users(None, club_guid)
+    print(response)
+    assert "users" not in str(response)
+
 
 
 # test GetWorkspaceWithUsers two users

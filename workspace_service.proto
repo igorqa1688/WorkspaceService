@@ -186,7 +186,7 @@ message AddVisiblePlayersToUserResponse {
 message RemoveVisiblePlayersFromUserRequest {
 	repeated string player_guids = 1;
 	oneof query {
-		GUID workspace_guid = 2;
+		GUID workspacRe_guid = 2;
 		GUID club_guid = 4;
 	}
 	GUID user_guid = 3;

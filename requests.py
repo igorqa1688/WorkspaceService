@@ -30,32 +30,6 @@ def get_all_workspaces() -> str:
             return e
 
 
-def get_workspace_by_workspace_guid(workspace_guid: str) -> str:
-    with grpc.insecure_channel(server) as channel:
-        stub = workspace_service_pb2_grpc.WorkspaceServiceStub(channel)
-
-        request = workspace_service_pb2.GetWorkspaceRequest(
-            workspace_guid=workspace_service_pb2.GUID(value=f"{workspace_guid}"))
-        try:
-            response = stub.GetWorkspace(request)
-            return response
-        except Exception as e:
-            return e
-
-
-def get_workspace_by_club_guid(club_guid: str) -> str:
-    with grpc.insecure_channel(server) as channel:
-        stub = workspace_service_pb2_grpc.WorkspaceServiceStub(channel)
-
-        request = workspace_service_pb2.GetWorkspaceRequest(
-            club_guid=workspace_service_pb2.GUID(value=f"{club_guid}"))
-        try:
-            response = stub.GetWorkspace(request)
-            return response
-        except Exception as e:
-            return e
-
-
 def get_workspace(workspace_guid: None, club_guid: None) -> str:
     with grpc.insecure_channel(server) as channel:
         stub = workspace_service_pb2_grpc.WorkspaceServiceStub(channel)
@@ -65,6 +39,11 @@ def get_workspace(workspace_guid: None, club_guid: None) -> str:
             )
         elif club_guid:
             request = workspace_service_pb2.GetWorkspaceRequest(
+                club_guid=workspace_service_pb2.GUID(value=club_guid)
+            )
+        else:
+            request = workspace_service_pb2.GetWorkspaceRequest(
+                workspace_guid=workspace_service_pb2.GUID(value=workspace_guid),
                 club_guid=workspace_service_pb2.GUID(value=club_guid)
             )
         try:
@@ -241,7 +220,6 @@ def remove_user_from_workspace(workspace_guid: None, club_guid: None, user_guid:
             return 0
         except Exception as e:
             return e
-
 
 
 def remove_visible_players_from_user(workspace_guid: None, club_guid: None, user_guid: str, player_guids: str) -> str:
