@@ -2,7 +2,7 @@ import pytest
 from requests import get_all_workspaces, create_workspace, get_workspace_by_workspace_guid, get_workspace_by_club_guid
 from requests import (get_workspace, put_user_to_workspace, add_visible_players_to_user,
                       put_user_to_workspace_without_user_workspace_description, get_user_in_workspace,
-                      get_user_workspaces)
+                      get_user_workspaces, get_workspace_with_users)
 from functions import generate_guid, generate_workspace_description, random_role
 from global_vars import roles
 
@@ -377,3 +377,23 @@ def test_add_visible_players_dublicate_user():
     assert grpc_details == "Internal Error. Check service logs"
 
 
+# test GetWorkspaceWithUsers by workspace_guid
+@pytest.mark.smoke
+def test_get_workspace_with_users_by_workspace_guid_one_user():
+    club_guid = generate_guid()
+    user_guid = generate_guid()
+    players_guid = []
+    player_guid = generate_guid()
+    for i in range(2):
+        players_guid.append(player_guid)
+    user_role = roles[1]
+    # Создание workspace
+    workspace = create_workspace(club_guid)
+    # Получение workspace_guid созданного workspace
+    workspace_guid = workspace.workspace.workspace_guid.value
+    # Добавление user в workspace
+    put_user_to_workspace_without_user_workspace_description(workspace_guid, club_guid,  user_guid, user_role)
+    response = get_workspace_with_users(workspace_guid, None)
+    print(f"\n{response}\n")
+    response_user_guid = response.users[0].user_guid.value
+    assert response_user_guid == user_guid

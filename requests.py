@@ -71,14 +71,17 @@ def get_workspace(workspace_guid: str, club_guid: str) -> str:
             return e
 
 
-def get_workspace_with_users(workspace_guid: str, club_guid: str) -> str:
+def get_workspace_with_users(workspace_guid: None, club_guid: None) -> str:
     with grpc.insecure_channel(server) as channel:
         stub = workspace_service_pb2_grpc.WorkspaceServiceStub(channel)
-
-        request = workspace_service_pb2.GetWorkspaceWithUsersRequest(
-            workspace_guid=workspace_service_pb2.GUID(value=workspace_guid),
-            club_guid=workspace_service_pb2.GUID(value=club_guid)
-        )
+        if workspace_guid:
+            request = workspace_service_pb2.GetWorkspaceWithUsersRequest(
+                workspace_guid=workspace_service_pb2.GUID(value=workspace_guid)
+            )
+        elif club_guid:
+            request = workspace_service_pb2.GetWorkspaceWithUsersRequest(
+                club_guid=workspace_service_pb2.GUID(value=club_guid)
+            )
         try:
             response = stub.GetWorkspaceWithUsers(request)
             return response
