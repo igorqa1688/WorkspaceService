@@ -165,6 +165,34 @@ def test_put_user_to_workspace_role_manager():
     assert response_role_in_workspace == roles.index(user_role)
 
 
+# test PutUserToWorkspace by workspace обновление user_role and descr
+@pytest.mark.smoke
+def test_put_user_to_workspace_user_update_role_and_description():
+    club_guid = generate_guid()
+    user_guid = generate_guid()
+    new_user_role = roles[1]
+    user_description = "new description"
+    # Создание workspace
+    workspace = create_workspace(club_guid)
+    # Получение workspace_guid созданного workspace
+    workspace_guid = workspace.workspace.workspace_guid.value
+    # Добавление юзера в в workspace
+    put_user_to_workspace(None, club_guid,  user_guid, roles[2], "")
+    # Обновление user в workspace
+    response = put_user_to_workspace(None, club_guid,  user_guid, new_user_role, user_description)
+    # Распаковка ответа
+    response_workspace_guid = response.workspace_guid.value
+    response_club_guid = response.club_guid.value
+    response_user_guid = response.user_guid.value
+    response_role_in_workspace = response.role_in_workspace
+    response_user_workspace_description = response.user_workspace_description
+    assert response_workspace_guid == workspace_guid
+    assert response_club_guid == club_guid
+    assert response_user_guid == user_guid
+    assert response_user_workspace_description == user_description
+    assert response_role_in_workspace == roles.index(new_user_role)
+
+
 # test PutUserToWorkspace by workspace role ROLE_UNKNOWN with user_workspace_description
 @pytest.mark.smoke
 def test_put_user_to_workspace_without_user_workspace_description():
