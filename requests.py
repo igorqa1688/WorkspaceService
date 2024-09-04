@@ -120,18 +120,16 @@ def get_user_in_workspace(workspace_guid: None, club_guid: None, user_guid: str)
                 workspace_guid=workspace_service_pb2.GUID(value=workspace_guid),
                 user_guid=workspace_service_pb2.GUID(value=user_guid)
             )
-            print('by workspace_guid')
         elif club_guid:
             request = workspace_service_pb2.GetUserInWorkspaceRequest(
                 club_guid=workspace_service_pb2.GUID(value=club_guid),
                 user_guid=workspace_service_pb2.GUID(value=user_guid)
             )
-            print('by club_guid')
         try:
             response = stub.GetUserInWorkspace(request)
             return response
         except Exception as e:
-            return f"error: {e}"
+            return e
 
 
 def put_user_to_workspace(workspace_guid: None, club_guid: None, user_guid: str, user_role: str, user_workspace_description: None ) -> str:
@@ -155,7 +153,7 @@ def put_user_to_workspace(workspace_guid: None, club_guid: None, user_guid: str,
             response = stub.PutUserToWorkspace(request)
             return response
         except Exception as e:
-            return f"error: {e}"
+            return e
 
 
 def put_user_to_workspace_without_user_workspace_description(workspace_guid: None, club_guid: None, user_guid: str, user_role: str) -> str:
@@ -177,7 +175,7 @@ def put_user_to_workspace_without_user_workspace_description(workspace_guid: Non
             response = stub.PutUserToWorkspace(request)
             return response
         except Exception as e:
-            return f"error: {e}"
+            return e
 
 
 def add_visible_players_to_user(player_guids: list, workspace_guid: None, club_guid: None, user_guid: str) -> str:
@@ -216,8 +214,8 @@ def remove_user_from_workspace(workspace_guid: None, club_guid: None, user_guid:
                 user_guid=workspace_service_pb2.GUID(value=user_guid)
             )
         try:
-            stub.RemoveUserFromWorkspace(request)
-            return 0
+            response = stub.RemoveUserFromWorkspace(request)
+            return str(response)
         except Exception as e:
             return e
 
@@ -241,10 +239,10 @@ def remove_visible_players_from_user(workspace_guid: None, club_guid: None, user
         else:
             return f"error remove_visible_players_from_user: workspace_guid {workspace_guid}, club_guid {club_guid}"
         try:
-            stub.RemoveVisiblePlayersFromUser(request)
-            return 0
+            response = stub.RemoveVisiblePlayersFromUser(request)
+            return str(response)
         except Exception as e:
-            return f"error: {e}"
+            return e
 
 
 if __name__ == "__main__":
